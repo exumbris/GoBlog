@@ -1,0 +1,30 @@
+{{define "base"}}
+<!doctype html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>{{template "title" .}} - My Blog</title>
+        <link rel='stylesheet' href='/static/css/styles.css'>
+        <script src='/static/js/main.js' type='text/javascript' defer></script>
+    </head>
+    <body>
+        <header class="top-banner">
+            <a href="/" class="my-logo">Life in Chicago</a>
+            
+            {{template "nav" .}}
+
+            <button class="login-button">Login</button>
+        </header>
+        <main>
+            {{template "main" .}}
+        </main>
+        <footer class="bottom-banner">
+            <ul class="bottom-links">
+                <a href="https://go.dev/">Powered by Golang</a>
+                <a href="">LinkedIn</a>
+                <a href="">Github</a>
+            </ul>
+        </footer>
+    </body>
+</html>
+{{end}}

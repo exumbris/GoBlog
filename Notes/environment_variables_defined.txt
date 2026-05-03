@@ -1,0 +1,26 @@
+Useful Notes
+
+
+
+1. What are environment variables?
+   - They are key-value pairs stored in the operating system used to
+    configure applications without hardcoding values into the code.
+   - Examples: 
+        1. DB_HOST=localhost
+        2. PORT=4000
+        3. API_KEY=12345
+2. Why do we use environment variables?
+   - Separation of configuration and code:
+        1. Instead of hardcoding sensitive or environment-specific values into our code,
+        we can store them in these environment variables
+        2. This makes our code more portable and secure
+   - Flexibility
+        1. We can use the same codebase for different environments like
+        development, testing, production, by changing the environment variables
+                For example:
+                        development: DB_HOST=localhost
+                        Production: DB_HOST=prod-db.example.com
+   - Security
+        1. Sensitive information like API Keys or passwords can be stored in
+        environment variables instead of being hardcoded into your codebase.
+
