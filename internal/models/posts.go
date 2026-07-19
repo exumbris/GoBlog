@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -21,6 +20,13 @@ type Post struct {
 // Define a BlogPostModel type which wraps a sql.DB connection pool.
 type BlogPostModel struct {
     DB *sql.DB
+    /*A sql.DB is not a single connection, but a connection pool manager.
+    Basically, we have one long-lived sql.DB object that manages many real TCP connctions
+    to MySQL behind the scenes. Each query borrows one connection from the pool, uses it, then returns it. 
+
+    Without connection pooling, every queue opens/closes a fresh TCP connection; slow and expensive.
+    But, with pooling, we can resuse existing connections leading to better performance, concurrency, and less DB churn.
+    */
 }
 
 // This will insert a new blog post into the database.
@@ -142,24 +148,91 @@ func (m *BlogPostModel) Latest() ([]Post, error) {
 		return posts, nil
 }
 
-func (m *BlogPostModel) NonExpired() (int) {
+func (m *BlogPostModel) NonExpired() (int64, error) {
     stmt := "SELECT COUNT(*) FROM blogPosts WHERE expires > UTC_TIMESTAMP()"
     row := m.DB.QueryRow(stmt)
-    fmt.Println("There are %d non-expired posts in the blog", row)
 
-    err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+    var numNonExpiredRows int64
+    /*The database driver (for MySQL, Postgres, etc.) always returns aggregate results
+    like COUNT(*) as a 64-bit integer, because the database itself can store and return
+    very large numbers (billions or trillions of rows)
+    
+    If you use int in Go, it might be 32 bits on some systems, which could overflow if 
+    the database ever returns a value larger than 2,147,483,647. By using int64, you
+    guarantee that your Go variable can always hold the value the database returns,
+    no matter the machine or the size of the table.*/
+    
+    err := row.Scan(&numNonExpiredRows) //pointer to where we want to copy data to
+
     if err != nil {
-        // If the query returns no rows, then row.Scan() will return a
-        // sql.ErrNoRows error. We use the errors.Is() function check for that
-        // error specifically, and return our own ErrNoRecord error
-        // instead (we'll create this in a moment).
-        if errors.Is(err, sql.ErrNoRows) {
-            return Post{}, ErrNoRecord
-        } else {
-            return Post{}, err
-        }
+        return 0, err
     }
 
-    return row;
+    return numNonExpiredRows, nil
 	
+}
+
+
+func (m *BlogPostModel) ExpiredCount() (int64, error) {
+    stmt := "SELECT COUNT(*) FROM blogPosts WHERE expires <= UTC_TIMESTAMP()"
+    row := m.DB.QueryRow(stmt)
+
+    var numExpiredRows int64
+    
+    err := row.Scan(&numExpiredRows) //pointer to where we want to copy data to
+
+    if err != nil {
+        return 0, err
+    }
+
+    return numExpiredRows, nil
+}
+
+func (m *BlogPostModel) ExistsByID(ID int) (bool, error) {
+    stmt := "SELECT EXISTS (SELECT 1 FROM blogPosts WHERE id = ? AND expires > UTC_TIMESTAMP())"
+
+    row := m.DB.QueryRow(stmt, ID)
+
+    var idExists int
+    
+    err := row.Scan(&idExists)
+
+    if err != nil {
+        return false, err
+    }
+
+    if idExists == 0 {
+        return false, nil
+    }
+    return true, nil
+}
+
+func (m *BlogPostModel) LatestByLimit(numNonExpiredLimit int) ([]Post, error) {
+		stmt := "SELECT id, title, content, created, expires FROM blogPosts WHERE expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT ?"
+
+		rows, err := m.DB.Query(stmt, numNonExpiredLimit)
+		if err != nil {
+			return nil, err
+		}
+	
+		defer rows.Close()
+	
+		var posts []Post
+	
+		for rows.Next() {
+			var s Post
+
+			err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+			if err != nil {
+				return nil, err
+			}
+
+			posts = append(posts, s)
+		}
+	
+		if err = rows.Err(); err != nil {
+			return nil, err
+		}
+	
+		return posts, nil
 }

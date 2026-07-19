@@ -1,0 +1,60 @@
+package main
+
+import (
+	"html/template"
+	"path/filepath"
+
+	"blog.ariellarin.com/internal/models"
+)
+
+// Define a templateData type to act as the holding structure for
+// any dynamic data that we want to pass to our HTML templates.
+// At the moment it only contains one field, but we'll add more
+// to it as the project progresses.
+type templateData struct {
+    Post models.Post
+	Posts []models.Post
+}
+
+
+func newTemplateCache() (map[string]*template.Template, error) {
+    // Initialize a new map to act as the cache.
+    cache := map[string]*template.Template{}
+
+    // Use the filepath.Glob() function to get a slice of all filepaths that
+    // match the pattern "./ui/html/pages/*.html". This will essentially give
+    // us a slice of all the filepaths for our application 'page' templates
+    // like [ui/html/pages/home.html ui/html/pages/view.html]
+    pages, err := filepath.Glob("./ui/html/pages/*.html")
+    if err != nil {
+        return nil, err
+    }
+
+    // Loop through the page filepaths one-by-one.
+    for _, page := range pages {
+        // Extract the file name (like 'home.html') from the full filepath
+        // and assign it to the name variable.
+        name := filepath.Base(page)
+
+        // Create a slice containing the filepaths for our base template, any
+        // partials and the page.
+        files := []string{
+            "./ui/html/base.html",
+            "./ui/html/partials/nav.html",
+            page,
+        }
+
+        // Parse the files into a template set.
+        ts, err := template.ParseFiles(files...)
+        if err != nil {
+            return nil, err
+        }
+
+        // Add the template set to the map, using the name of the page
+        // (like 'home.tmpl') as the key.
+        cache[name] = ts
+    }
+
+    // Return the map.
+    return cache, nil
+}

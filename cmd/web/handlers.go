@@ -12,32 +12,36 @@ import (
 
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Server", "Go") // do this to add to the response header map
-	// You must call this before either w.WriteHeader or w.Write
-
-	// Initialize a slice containing the paths to the two files. It's important
-    // to note that the file containing our base template must be the first
-    // file in the slice.
+    w.Header().Add("Server", "Go")
     
-	files := []string{
-        "./ui/html/base.html",
-		"./ui/html/partials/nav.html",
-        "./ui/html/pages/home.html",
-    }
-    // Use the template.ParseFiles() function to read the files and store the
-    // templates in a template set. Notice that we use ... to pass the contents 
-    // of the files slice as variadic arguments.
-    ts, err := template.ParseFiles(files...)
+    posts, err := app.posts.Latest()
     if err != nil {
-		app.serverError(w, r, err)
+        app.serverError(w, r, err)
         return
     }
-	
-    // Use the ExecuteTemplate() method to write the content of the "base" 
-    // template as the response body.
-    err = ts.ExecuteTemplate(w, "base", nil)
+
+    files := []string{
+        "./ui/html/base.html",
+        "./ui/html/partials/nav.html",
+        "./ui/html/pages/home.html",
+    }
+
+    ts, err := template.ParseFiles(files...)
     if err != nil {
-		app.serverError(w, r, err)
+        app.serverError(w, r, err)
+        return
+    }
+
+    // Create an instance of a templateData struct holding the slice of
+    // snippets.
+    data := templateData{
+        Posts: posts,
+    }
+
+    // Pass in the templateData struct when executing the template.
+    err = ts.ExecuteTemplate(w, "base", data)
+    if err != nil {
+        app.serverError(w, r, err)
     }
 }
 
@@ -48,9 +52,6 @@ func (app *application) blogView(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Use the SnippetModel's Get() method to retrieve the data for a
-    // specific record based on its ID. If no matching record is found,
-    // return a 404 Not Found response.
     post, err := app.posts.Get(id)
     if err != nil {
         if errors.Is(err, models.ErrNoRecord) {
@@ -61,8 +62,29 @@ func (app *application) blogView(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Write the snippet data as a plain-text HTTP response body.
-    fmt.Fprintf(w, "%+v", post)
+    // Initialize a slice containing the paths to the view.tmpl file,
+    // plus the base layout and navigation partial that we made earlier.
+    files := []string{
+        "./ui/html/base.html",
+        "./ui/html/partials/nav.html",
+        "./ui/html/pages/view.html",
+    }
+
+    // Parse the template files..
+    ts, err := template.ParseFiles(files...)
+    if err != nil {
+        app.serverError(w, r, err)
+        return
+    }
+
+    data := templateData {
+        Post: post,
+    }
+
+    err = ts.ExecuteTemplate(w, "base", data)
+    if err != nil {
+        app.serverError(w, r, err)
+    }
 }
 
 func (app *application) blogPostComposer(w http.ResponseWriter, r *http.Request) {

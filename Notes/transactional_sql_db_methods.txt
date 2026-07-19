@@ -1,0 +1,30 @@
+Exec is a method on *sql.DB that is commonly used for statements where you do not
+scan returned rows/do not return rows:
+INSERT, UPDATE, and DELETE.
+
+TCP connections are managed by the database driver and can be reused, opened, and pooled
+under sql.DB.
+
+Some useful terms to understand:
+
+1. TCP connection: the channel or wire
+2. Session: the state of the database server tracks about what that client is doing
+
+
+
+The `LOCK TABLES` statement in MySQL is used to explicitly lock tables to control
+concurrent access by multiple sessions. It ensures data consistency during complex transactions
+by preventing other sessions from modifying the data until the lock is released.
+
+Some database operations, like LOCK TABLES, are session specific.
+They live on one connection; if you lock on connection A and try to unlock on connection B,
+the database server doesn't try to recognize the unlock because connection B never placed that lock.
+
+
+
+
+Useful knowledge concerning TCP connections, Database Sessions, and sql.DB (database connection pool manager):
+sql.DB maintains a pool of connections, meaning multiple TCP connections open to the database at once.
+Each of those connections has its own session on the database server's side.
+So at any given moment there could be several sessions open, one per active connection.
+
