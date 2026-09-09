@@ -1,0 +1,4 @@
+Everything is handwritten and all my insights are gained from books, documentation, articles, youtube,
+and, on occasion, verifiable output from Copilot. There is value in writing (or typing, I guess) by hand.
+It is a time proven method for information retention and it is a joy to share what I have learned, in my
+own words.

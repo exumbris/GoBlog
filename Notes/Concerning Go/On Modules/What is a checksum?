@@ -1,0 +1,13 @@
+A checksum is a fingerprint calculated from the contents of some data.
+
+Go module files will contain dependencies that we use and their versions. Checksums check that the contents that we use in our project haven't changed. Think about it...If we rely upon some version of someone else's project to support our project, if some of the functions we use change, it can impact our own project.
+
+The fingerprint that was mentioned earlier is created by running the dependency/downloaded module's contents
+through a cryptographic hash function and produce a sequence that we can think of as that fingerprint.
+
+Like asdf'psdlna;os)((8yq[er]))
+This is recorded in a go.sum file. If someone changes the dependency version, like some library hosted on github, then the fingerprint associated with that version changes. This means that the output from the cryptographic hash function is not the same as the "fingerprint" that we have been using to denote our dependency's version.
+
+This is all a security measure to ensure that we don't end up using dangerous code.
+
+To put this into context, it is important to know that most times, authors publish finished versions of a dependency. If they want to make changes, they publish a new version that we can upgrade to after examining the authors posted code changes. It is abnormal for an author to change already published software; again, if they want to improve something, they just publish a new release and tell you what they changed from version 1.1 to 1.2 or whatever version you were on to what you upgrade to.

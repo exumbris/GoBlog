@@ -1,0 +1,18 @@
+In Go, modules enable us to manage dependencies and to represent one versioned unit of Go code.
+
+A module file will be named go.mod and will look like this:
+
+module projectnamehere.domainnamehere.com/net
+
+go version x.xx.x
+
+for example:
+
+module myfishingblog.ariellarin.com
+
+go version 1.27.0
+
+require github.com/someone/coollibrarythatiwanttouse v1.4.2
+
+Notice that last bit is a dependency that we are using. We can use other modules in our
+own projects and specify the version that we want to use.
